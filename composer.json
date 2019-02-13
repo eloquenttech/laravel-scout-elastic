@@ -1,0 +1,28 @@
+{
+    "name": "eloquent/laravel-scout-elastic",
+    "description": "Elastic Driver for Laravel Scout",
+    "keywords": ["laravel", "scout", "elasticsearch", "elastic"],
+    "require": {
+        "php": ">=7.2.0",
+        "laravel/scout": "^6.0",
+        "elasticsearch/elasticsearch": "^6.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Eloquent\\ElasticScout\\": "src/"
+        }
+    },
+    "suggest": {
+        "elasticsearch/elasticsearch": "Required to use the Elasticsearch engine (^6.0)."
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Eloquent\\ElasticScout\\ElasticScoutProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
