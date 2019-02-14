@@ -35,7 +35,6 @@ After you've published the Laravel Scout package configuration:
         'hosts' => [
             env('SCOUT_ELASTIC_HOST', 'http://localhost'),
         ],
-        'min_score' => 2.5,
     ],
 ...
 ```

@@ -207,20 +207,32 @@ class ElasticScoutEngine extends Engine
      */
     protected function performSearch(Builder $builder, array $options = [])
     {
+        $searchableFields = array_keys($builder->model->toSearchableArray());
+
         $params = [
-            'index' => $builder->model->searchableAs(),
+            'index' => $builder->index ?: $builder->model->searchableAs(),
             'type' => '_doc',
             'body' => [
                 'query' => [
                     'bool' => [
-                        'must' => [
-                            'query_string' => [
-                                'query' => $builder->query,
-                            ]
+                        'should' => [
+                            [
+                                'multi_match' => [
+                                    'query' => $builder->query,
+                                    'type' => 'cross_fields',
+                                    'fields' => $searchableFields,
+                                ],
+                            ],
+                            [
+                                'multi_match' => [
+                                    'query' => $builder->query,
+                                    'type' => 'phrase_prefix',
+                                    'fields' => $searchableFields,
+                                ],
+                            ],
                         ],
                     ]
                 ],
-                'min_score' => config('scout.elastic.min_score'),
             ]
         ];
 
