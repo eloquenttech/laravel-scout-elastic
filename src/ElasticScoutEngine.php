@@ -231,6 +231,7 @@ class ElasticScoutEngine extends Engine
                                 ],
                             ],
                         ],
+                        'minimum_should_match' => 1,
                     ]
                 ],
             ]
@@ -268,7 +269,7 @@ class ElasticScoutEngine extends Engine
     protected function filters(Builder $builder)
     {
         return collect($builder->wheres)->map(function ($value, $key) {
-            return ['term' => [$key => $value]];
+            return ['term' => [$key . '.keyword' => $value]];
         })->values()->all();
     }
 
