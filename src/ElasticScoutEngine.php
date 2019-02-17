@@ -210,7 +210,9 @@ class ElasticScoutEngine extends Engine
      */
     protected function performSearch(Builder $builder, array $options = [])
     {
-        $searchableFields = array_keys($builder->model->toSearchableArray());
+        $searchableFields = collect($builder->model->searchableProperties())->filter(function ($field) {
+            return $field['type'] === 'text' || $field['type'] === 'text';
+        })->keys()->toArray();
 
         $params = [
             'index' => $builder->index ?: $builder->model->searchableAs(),
