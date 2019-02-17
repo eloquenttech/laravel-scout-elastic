@@ -157,9 +157,12 @@ class ElasticScoutEngine extends Engine
             return collect([]);
         }
 
-        $keys = collect($results['hits']['hits'])->pluck('_id')->values()->all();
+        $ids = collect($results['hits']['hits'])->pluck('_id');
+        $models = $model->getScoutModelsByIds($builder, $ids->toArray())->keyBy($model->getKeyName());
 
-        return $model->getScoutModelsByIds($builder, $keys);
+        return $ids->map(function ($id) use ($models) {
+            return $models[$id] ?? null;
+        })->filter();
     }
 
     /**
