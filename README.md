@@ -42,7 +42,19 @@ After you've published the Laravel Scout package configuration:
 ## Usage
 You wil now be able to use Laravel scout as described in the [official documentation](https://laravel.com/docs/5.7/scout).
 
-However to fine tune your elastic search further you can add the following function to your searchable models
+### Elasticsearch indexes
+While indexing your models, this package will automatically create a new index for your model if one doesnt already
+exist. By default the name of the index will be a pluralised version of the models classname. However, you can override
+this by implementing a `searchableAs()` method on your model:
+```php
+    public function searchableAs()
+    {
+        return 'customer_index';
+    }
+```
+
+By default, indexes are created without any additional settings. However to fine tune elasticsearch you can add the 
+following function to your searchable models to add mappings for each of your searchable properties.
 ```php
 public function searchableProperties()
 {
@@ -51,6 +63,7 @@ public function searchableProperties()
         'firstname' => ['type' => 'text'],
         'surname' => ['type' => 'text'],
         'email' => ['type' => 'text'],
+        'dob' => ['type' => 'date', 'format' => 'yyyy-MM-dd'],
         'company_name' => ['type' => 'text'],
         'phone_number' => ['type' => 'text'],
     ];
@@ -59,8 +72,25 @@ public function searchableProperties()
 These define your searchable mappings that will be used when creating the index. For more info fine tuning these values
 see [the elastic documentation.](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html).
 
-> NOTE: In order for the `where()` method to work this this driver,
-> the field you are filtering must be defined as type `keyword`.
+If you need to define further mapping details for your indexes, you will need to create the index manually before
+importing any models. These settings will not be overwritten.
+
+> NOTE: Any fields that you wish to filter, or sort on will need to be defined as one of the following in your
+> indexes' mapping: `keyword`, `integer`, `date`, `boolean`.
+
+### Additional where clause operators
+By default, laravel scout only allows you to use the basic `=` operator in where clauses on your scout queries. 
+However, this package extends on this by allowing you to use the following additional operators: `<, <=, >, >=`. 
+In order to use these operators you will need to manually edit the scout builders `wheres` property, for example:
+```php
+$builder = Customers::search('John');
+$builder->wheres[] = ['dob', '<', '2000-01-01'];
+$builder->wheres[] = ['dob', '>=', '1970-01-01'];
+```
+This query will fetch all customers named 'John' that were born between 1970 and 2000.
+
+> NOTE: When defining date ranges, you will need to ensure that the dates are provided in the same format
+> that has been defined for that field in the `searchableProperties()` method.
 
 ## License
 The MIT License (MIT).

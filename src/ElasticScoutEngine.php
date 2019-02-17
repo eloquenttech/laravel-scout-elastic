@@ -224,14 +224,6 @@ class ElasticScoutEngine extends Engine
                             [
                                 'multi_match' => [
                                     'query' => $builder->query,
-                                    'type' => 'most_fields',
-                                    'fuzziness' => 1,
-                                    'fields' => $searchableFields,
-                                ],
-                            ],
-                            [
-                                'multi_match' => [
-                                    'query' => $builder->query,
                                     'type' => 'cross_fields',
                                     'fields' => $searchableFields,
                                 ],
@@ -281,9 +273,23 @@ class ElasticScoutEngine extends Engine
      */
     protected function filters(Builder $builder)
     {
-        return collect($builder->wheres)->map(function ($value, $key) {
-            return ['term' => [$key => $value]];
-        })->values()->all();
+        $operators = [
+            '>' => 'gt',
+            '>=' => 'gte',
+            '<' => 'lt',
+            '<=' => 'lte',
+        ];
+
+        return collect($builder->wheres)->map(function ($value, $key) use ($operators) {
+            if (!is_array($value)) {
+                return ['term' => [$key => $value]];
+            }
+
+            [$field, $operator, $value] = $value;
+            $elasticOperator = $operators[$operator] ?? null;
+
+            return $elasticOperator ? ['range' => [$field => [$elasticOperator => $value]]] : null;
+        })->filter()->values()->all();
     }
 
     /**
