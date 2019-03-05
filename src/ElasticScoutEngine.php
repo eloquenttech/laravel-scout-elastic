@@ -127,7 +127,7 @@ class ElasticScoutEngine extends Engine
             'size' => $perPage,
         ]);
 
-       $result['nbPages'] = $result['hits']['total'] / $perPage;
+       $result['nbPages'] = $result['total'] / $perPage;
 
         return $result;
     }
@@ -140,7 +140,7 @@ class ElasticScoutEngine extends Engine
      */
     public function mapIds($results)
     {
-        return collect($results['hits']['hits'])->pluck('_id')->values();
+        return $results['hits']->pluck('_id')->values();
     }
 
     /**
@@ -153,11 +153,11 @@ class ElasticScoutEngine extends Engine
      */
     public function map(Builder $builder, $results, $model)
     {
-        if ($results['hits']['total'] === 0) {
+        if ($results['total'] === 0) {
             return collect([]);
         }
 
-        $ids = collect($results['hits']['hits'])->pluck('_id');
+        $ids = $results['hits']->pluck('_id');
         $models = $model->getScoutModelsByIds($builder, $ids->toArray())->keyBy($model->getKeyName());
 
         return $ids->map(function ($id) use ($models) {
@@ -173,7 +173,7 @@ class ElasticScoutEngine extends Engine
      */
     public function getTotalCount($results)
     {
-        return $results['hits']['total'];
+        return $results['total'];
     }
 
     /**
@@ -217,7 +217,7 @@ class ElasticScoutEngine extends Engine
         $params = [
             'index' => $builder->index ?: $builder->model->searchableAs(),
             'type' => '_doc',
-            'body' => [
+            'body' => $builder->query ? [
                 'query' => [
                     'bool' => [
                         'should' => [
@@ -239,7 +239,7 @@ class ElasticScoutEngine extends Engine
                         'minimum_should_match' => 1,
                     ]
                 ],
-            ]
+            ] : [],
         ];
 
         if ($sort = $this->sort($builder)) {
@@ -262,7 +262,15 @@ class ElasticScoutEngine extends Engine
             return call_user_func($builder->callback, $this->elastic, $params);
         }
 
-        return $this->elastic->search($params);
+        $result = $this->elastic->search($params);
+        $result['total'] = $result['hits']['total'];
+        $result['hits'] = collect($result['hits']['hits'])->map(function ($hit) {
+            $data = $hit['_source'];
+            $data['_id'] = $hit['_id'];
+            return $data;
+        });
+
+        return $result;
     }
 
     /**
