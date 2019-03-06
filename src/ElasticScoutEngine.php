@@ -184,21 +184,11 @@ class ElasticScoutEngine extends Engine
      */
     public function flush($model)
     {
-        $model->chunk(250, function ($models) {
-            $params['body'] = [];
-
-            foreach ($models as $model) {
-                $params['body'][] = [
-                    'delete' => [
-                        '_id' => $model->getScoutKey(),
-                        '_index' => $model->searchableAs(),
-                        '_type' => '_doc',
-                    ]
-                ];
-            }
-
-            $this->elastic->bulk($params);
-        });
+        try {
+            $this->elastic->indices()->delete(['index' => $model->searchableAs()]);
+        } catch (\Exception $exception) {
+            //
+        }
     }
 
     /**
